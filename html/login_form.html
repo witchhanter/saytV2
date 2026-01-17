@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="icon" type="images/png" sizes="16x16" href="../images/icons8-мужчина-стоит-50.png">
+        <title>Вход</title> 
+        <link rel="stylesheet" href="../css/style.css">      
+    </head>
+    <body>
+        <div class="child glass-border fade-up" style="width: 300px; height: 340px;">
+            <h1 class="fade-up" style="text-shadow: 3px 3px 3px rgba(0,0,0,0.3); color: rgb(255, 255, 255)">Вход</h1>
+            
+            <input type="email" id="emailInput" placeholder="Введите email" class="glass-input fade-up">
+            <input type="password" id="passwordInput" placeholder="Введите пароль" class="glass-input fade-up">
+            
+            <div class="checkbox-row fade-up">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="remember">
+                    <label for="remember">Запомнить меня</label>
+                </div>
+            </div>
+            
+            <button class="button" id="loginBtn">Войти</button>
+            
+            <div id="message" class="fade-up" style="color: white; margin-top: 10px; font-size: 14px; text-align: center; height: 20px;"></div>
+            
+            <table>
+                <tr>
+                    <td colspan="2" style="padding-top: 10px;">
+                        <a href="register_form.html" class="register-link fade-up">Зарегистрироваться</a>
+                    </td>
+                </tr>
+            </table>          
+            <table>
+                <tr>
+                    <td colspan="2" style="padding-top: 10px;">
+                        <a href="gl.html" class="register-link fade-up">Продолжить без входа в аккаунт</a>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        
+        <script src="../js/animations.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+    // ===== ЛОГИКА ВХОДА =====
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const rememberCheckbox = document.getElementById('remember');
+    const loginBtn = document.getElementById('loginBtn');
+    const messageDiv = document.getElementById('message');
+    
+    const USERS_KEY = 'registeredUsers';
+
+    // Устанавливаем фокус на поле email
+    emailInput.focus();
+
+    function loadUsers() {
+        const usersJSON = localStorage.getItem(USERS_KEY);
+        return usersJSON ? JSON.parse(usersJSON) : [];
+    }
+
+    function showMessage(text, isError = false) {
+        messageDiv.textContent = text;
+        messageDiv.style.color = isError ? '#ff6b6b' : '#51cf66';
+        
+        setTimeout(() => {
+            messageDiv.textContent = '';
+        }, 5000);
+    }
+
+    function handleLogin() {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        const remember = rememberCheckbox.checked;
+
+        if (!email || !password) {
+            showMessage('Пожалуйста, заполните все поля', true);
+            return;
+        }
+
+        const users = loadUsers();
+        
+        const user = users.find(u => u.email === email && u.password === password);
+        
+        if (user) {
+            const currentUser = {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                loginTime: new Date().toISOString()
+            };
+            
+            if (remember) {
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            } else {
+                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+            
+            showMessage('✓ Вход выполнен успешно! Переход на главную...', false);
+            
+            window.location.href = 'gl.html';
+            
+        } else {
+            showMessage('Неверный email или пароль', true);
+            passwordInput.value = '';
+            passwordInput.focus();
+        }
+    }
+
+    // Исправленный обработчик для "Продолжить без аккаунта"
+    document.querySelectorAll('.register-link').forEach(link => {
+        if (link.textContent.includes('Продолжить без входа')) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const guestUser = {
+                    id: 'guest',
+                    name: 'Гость',
+                    email: '',
+                    isGuest: true,
+                    loginTime: new Date().toISOString()
+                };
+                
+                sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
+                window.location.href = 'gl.html';
+            });
+        }
+    });
+
+    // Добавляем обработчики
+    loginBtn.addEventListener('click', handleLogin);
+
+    emailInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            passwordInput.focus();
+        }
+    });
+
+    passwordInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleLogin();
+        }
+    });
+});
+        </script>
+    </body>
+</html>

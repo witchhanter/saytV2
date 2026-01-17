@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/icons8-мужчина-стоит-50.png">
+        <title>Регистрация</title> 
+        <link rel="stylesheet" href="../css/style.css">
+        <style>
+            /* Стили для заблокированной кнопки */
+            .button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+            .button:disabled:hover,
+            .button:disabled:focus,
+            .button:disabled:active {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                transform: none;
+            }
+            .button {
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+            #message {
+                transition: opacity 0.3s ease;
+                min-height: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="child glass-border fade-up" style="width: 300px; height: 460px;">
+            <h1 style="text-shadow: 3px 3px 3px rgba(0,0,0,0.3); color: rgb(255, 255, 255)" class="fade-up">Регистрация</h1>
+            
+            <input type="text" id="nameInput" placeholder="Введите Ваше имя" class="glass-input fade-up">
+            <input type="email" id="emailInput" placeholder="Введите email" class="glass-input fade-up">
+            <input type="password" id="passwordInput" placeholder="Введите пароль" class="glass-input fade-up">
+            <input type="password" id="confirmPasswordInput" placeholder="Повторите пароль" class="glass-input fade-up">
+            
+            <div class="checkbox-row fade-up">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="agreeCheckbox">
+                    <label for="agreeCheckbox">Согласен с условиями</label>
+                </div>
+            </div>
+            
+            <button class="button" id="registerBtn" disabled>Зарегистрироваться</button>
+            
+            <div id="message" style="color: white; margin-top: 10px; font-size: 14px; text-align: center; height: 20px;"></div>
+            
+            <table>
+                <tr>
+                    <td colspan="2" >
+                        <a href="login_form.html" class="register-link fade-up">Уже есть аккаунт? Войти</a>
+                    </td>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <td colspan="2" >
+                        <a href="gl.html" class="register-link fade-up">Продолжить без входа в аккаунт</a>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        
+        <script src="../js/animations.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const nameInput = document.getElementById('nameInput');
+                const emailInput = document.getElementById('emailInput');
+                const passwordInput = document.getElementById('passwordInput');
+                const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+                const agreeCheckbox = document.getElementById('agreeCheckbox');
+                const registerBtn = document.getElementById('registerBtn');
+                const messageDiv = document.getElementById('message');
+
+                const USERS_KEY = 'registeredUsers';
+
+                // Функция для проверки заполненности всех полей
+                function checkAllFieldsFilled() {
+                    return nameInput.value.trim() !== '' &&
+                           emailInput.value.trim() !== '' &&
+                           passwordInput.value.trim() !== '' &&
+                           confirmPasswordInput.value.trim() !== '' &&
+                           agreeCheckbox.checked;
+                }
+
+                // Функция для обновления состояния кнопки
+                function updateButtonState() {
+                    const allFilled = checkAllFieldsFilled();
+                    
+                    // Обновляем состояние disabled
+                    registerBtn.disabled = !allFilled;
+                    
+                    // Обновляем визуальное состояние
+                    if (allFilled) {
+                        registerBtn.style.opacity = '1';
+                        registerBtn.style.cursor = 'pointer';
+                        registerBtn.title = "Нажмите для регистрации";
+                    } else {
+                        registerBtn.style.opacity = '0.6';
+                        registerBtn.style.cursor = 'not-allowed';
+                        
+                        // Подсказка в зависимости от того, чего не хватает
+                        if (!agreeCheckbox.checked) {
+                            registerBtn.title = "Сначала согласитесь с условиями";
+                        } else if (!nameInput.value.trim()) {
+                            registerBtn.title = "Введите имя";
+                        } else if (!emailInput.value.trim()) {
+                            registerBtn.title = "Введите email";
+                        } else if (!passwordInput.value.trim()) {
+                            registerBtn.title = "Введите пароль";
+                        } else {
+                            registerBtn.title = "Подтвердите пароль";
+                        }
+                    }
+                }
+
+                function loadUsers() {
+                    const usersJSON = localStorage.getItem(USERS_KEY);
+                    return usersJSON ? JSON.parse(usersJSON) : [];
+                }
+
+                function saveUsers(users) {
+                    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+                }
+
+                function emailExists(email, users) {
+                    return users.some(user => user.email === email);
+                }
+
+                function showMessage(text, isError = false) {
+                    messageDiv.textContent = text;
+                    messageDiv.style.color = isError ? '#ff6b6b' : '#51cf66';
+                    messageDiv.style.opacity = '1';
+                    
+                    setTimeout(() => {
+                        messageDiv.style.opacity = '0';
+                        setTimeout(() => {
+                            messageDiv.textContent = '';
+                            messageDiv.style.opacity = '1';
+                        }, 300);
+                    }, 5000);
+                }
+
+                function validateEmail(email) {
+                    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    return re.test(email);
+                }
+
+                function handleRegistration() {
+                    // Двойная проверка на всякий случай
+                    if (!agreeCheckbox.checked) {
+                        showMessage('Необходимо согласиться с условиями', true);
+                        agreeCheckbox.focus();
+                        return;
+                    }
+
+                    const name = nameInput.value.trim();
+                    const email = emailInput.value.trim();
+                    const password = passwordInput.value.trim();
+                    const confirmPassword = confirmPasswordInput.value.trim();
+
+                    if (!name || !email || !password || !confirmPassword) {
+                        showMessage('Пожалуйста, заполните все поля', true);
+                        return;
+                    }
+
+                    if (name.length < 2) {
+                        showMessage('Имя должно содержать минимум 2 символа', true);
+                        nameInput.focus();
+                        return;
+                    }
+
+                    if (!validateEmail(email)) {
+                        showMessage('Введите корректный email', true);
+                        emailInput.focus();
+                        return;
+                    }
+
+                    if (password.length < 6) {
+                        showMessage('Пароль должен содержать минимум 6 символов', true);
+                        passwordInput.focus();
+                        return;
+                    }
+
+                    if (password !== confirmPassword) {
+                        showMessage('Пароли не совпадают', true);
+                        confirmPasswordInput.focus();
+                        confirmPasswordInput.value = '';
+                        return;
+                    }
+
+                    const users = loadUsers();
+
+                    if (emailExists(email, users)) {
+                        showMessage('Пользователь с таким email уже зарегистрирован', true);
+                        emailInput.focus();
+                        return;
+                    }
+
+                    const newUser = {
+                        id: Date.now(),
+                        name: name,
+                        email: email,
+                        password: password,
+                        registrationDate: new Date().toISOString()
+                    };
+
+                    users.push(newUser);
+                    saveUsers(users);
+
+                    // Сохраняем данные текущего пользователя для автоматического входа
+                    localStorage.setItem('currentUser', JSON.stringify({
+                        id: newUser.id,
+                        name: newUser.name,
+                        email: newUser.email,
+                        loginTime: new Date().toISOString()
+                    }));
+
+                    showMessage('✓ Регистрация успешна! Переход на главную...', false);
+
+                    // ПЕРЕХОД НА gl.html через 1 секунду
+                    setTimeout(() => {
+                        window.location.href = 'gl.html';
+                    }, 1000);
+                }
+
+                // Обработчик клика по кнопке
+                registerBtn.addEventListener('click', function() {
+                    if (!registerBtn.disabled) {
+                        handleRegistration();
+                    }
+                });
+
+                // Слушатели изменений для всех полей
+                nameInput.addEventListener('input', updateButtonState);
+                emailInput.addEventListener('input', updateButtonState);
+                passwordInput.addEventListener('input', updateButtonState);
+                confirmPasswordInput.addEventListener('input', updateButtonState);
+                agreeCheckbox.addEventListener('change', updateButtonState);
+
+                // Обработчики Enter для навигации по полям
+                nameInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') emailInput.focus();
+                });
+
+                emailInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') passwordInput.focus();
+                });
+
+                passwordInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') confirmPasswordInput.focus();
+                });
+
+                confirmPasswordInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' && !registerBtn.disabled) {
+                        handleRegistration();
+                    }
+                });
+
+                // Инициализация
+                nameInput.focus();
+                updateButtonState();
+                
+                // Подсветка чекбокса при загрузке
+                setTimeout(() => {
+                    if (!agreeCheckbox.checked) {
+                        agreeCheckbox.style.outline = '2px solid #ff6b6b';
+                        agreeCheckbox.style.outlineOffset = '2px';
+                        setTimeout(() => {
+                            agreeCheckbox.style.outline = 'none';
+                        }, 2000);
+                    }
+                }, 1000);
+            });
+        </script>
+    </body>
+</html>
